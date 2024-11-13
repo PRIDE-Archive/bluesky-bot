@@ -1,11 +1,11 @@
-import os
-from fastapi import FastAPI
-from blueskysocial import Client, Post
-import logging
-import uvicorn
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
-import click
 import configparser
+import logging
+
+import click
+from blueskysocial import Client, Post
+from fastapi import FastAPI
+from pydantic import BaseModel
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
 
 app = FastAPI(
     title="bluesky pride bot",
@@ -61,11 +61,17 @@ def create_tweet(title, description):
 
     return result[:239]
 
+class MessageModel(BaseModel):
+    accession: str
+    title: str
+    description: str
+    url: str
 
-@app.get("/publish")
-async def post_to_bluesky(accession: str, title: str, description: str, url: str):
-    tweet = create_tweet(title, description)
-    post_str = build_bluesky_post(accession, tweet, url)
+
+@app.post("/publish")
+async def post_to_bluesky(message: MessageModel):
+    tweet = create_tweet(message.title, message.description)
+    post_str = build_bluesky_post(message.accession, tweet, message.url)
     post = Post(post_str)
     client.post(post)
 
