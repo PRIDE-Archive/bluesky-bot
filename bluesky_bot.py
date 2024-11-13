@@ -4,6 +4,8 @@ from blueskysocial import Client, Post
 import logging
 import uvicorn
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
+import click
+import configparser
 
 app = FastAPI(
     title="bluesky pride bot",
@@ -21,12 +23,10 @@ app = FastAPI(
 )
 
 # Set up the Bluesky client
-BLUESKY_HANDLE = os.getenv("BLUESKY_HANDLE")  # Your Bluesky handle (e.g., user.bsky.social)
-BLUESKY_PASSWORD = os.getenv("BLUESKY_PASSWORD")  # Your Bluesky password
+BLUESKY_HANDLE = None  # os.getenv("BLUESKY_HANDLE")  # Your Bluesky handle (e.g., user.bsky.social)
+BLUESKY_PASSWORD = None  # os.getenv("BLUESKY_PASSWORD")  # Your Bluesky password
 
 client = Client()
-client.authenticate(BLUESKY_HANDLE, BLUESKY_PASSWORD)
-
 
 # Load FLAN-T5 small model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-small")
@@ -70,10 +70,6 @@ async def post_to_bluesky(accession: str, title: str, description: str, url: str
     client.post(post)
 
 
-def main():
-    uvicorn.run(app, host="0.0.0.0", port=int(8080))
-
-
 class NoHealthAccessLogFilter(logging.Filter):
     def filter(self, record):
         message = record.getMessage()
@@ -81,6 +77,35 @@ class NoHealthAccessLogFilter(logging.Filter):
             return False
         else:
             return True
+
+
+def get_config(file):
+    """
+    This method read the default configuration file config.ini in the same path of the pipeline execution
+    :return:
+    """
+    config = configparser.ConfigParser()
+    config.read(file)
+    return config
+
+
+@click.command()
+@click.option("--config-file", "-a", type=click.Path(), default="config.ini")
+@click.option(
+    "--config-profile",
+    "-c",
+    help="This option allow to select a config profile",
+    default="TEST",
+)
+def main(config_file, config_profile):
+    global BLUESKY_HANDLE, BLUESKY_PASSWORD
+    config = get_config(config_file)
+    BLUESKY_HANDLE = config[config_profile]["BLUESKY_HANDLE"]
+    BLUESKY_PASSWORD = config[config_profile]["BLUESKY_PASSWORD"]
+
+    client.authenticate(BLUESKY_HANDLE, BLUESKY_PASSWORD)
+
+    uvicorn.run(app, host="0.0.0.0", port=int(8080))
 
 if __name__ == "__main__":
     main()
