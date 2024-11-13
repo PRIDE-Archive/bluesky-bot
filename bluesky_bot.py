@@ -102,10 +102,16 @@ def main(config_file, config_profile):
     config = get_config(config_file)
     BLUESKY_HANDLE = config[config_profile]["BLUESKY_HANDLE"]
     BLUESKY_PASSWORD = config[config_profile]["BLUESKY_PASSWORD"]
+    PORT = config[config_profile]["PORT"]
 
     client.authenticate(BLUESKY_HANDLE, BLUESKY_PASSWORD)
 
-    uvicorn.run(app, host="0.0.0.0", port=int(8080))
+    uvicorn.run(app, host="0.0.0.0", port=int(PORT))
+
+
+@app.get("/health")
+def read_docs():
+    return "alive"
 
 if __name__ == "__main__":
     main()
