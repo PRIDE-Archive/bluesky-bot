@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: $app_name
+  labels:
+    app: $app_name
+spec:
+  replicas: $k8s_replicas
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: $app_name
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: $app_name
+    spec:
+      imagePullSecrets:
+        - name: $DOCKER_PULL_SECRET
+      volumes:
+        - name: application-config
+          configMap:
+            name: $CONFIG_INI
+            items:
+              - key: config.ini
+                path: config.ini
+      containers:
+        - name: $app_name
+          image: $IMAGE
+          imagePullPolicy: Always
+          ports:
+            - containerPort: $port
+#          env:
+#            - name: HTTP_PROXY
+#              value: "http://$http_proxy_host:$http_proxy_port"
+#            - name: HTTPS_PROXY
+#              value: "http://$http_proxy_host:$http_proxy_port"
+#            - name: http_proxy
+#              value: "http://$http_proxy_host:$http_proxy_port"
+#            - name: https_proxy
+#              value: "http://$http_proxy_host:$http_proxy_port"
+          volumeMounts:
+            - name: application-config
+              mountPath: /app/config.ini
+              subPath: config.ini
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: $port
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 120
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: $port
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 120
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: $app_name-service
+spec:
+  selector:
+    app: $app_name
+  ports:
+    - protocol: TCP
+      port: $port
+      targetPort: $port
+  type: NodePort
