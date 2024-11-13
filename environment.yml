@@ -1,0 +1,15 @@
+# conda env create -f environment.yml
+name: pride-bluesky-bot
+channels:
+  - openms
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.8.18
+  - fastapi
+  - uvicorn
+  - transformers
+  - pip
+  - pip:
+    - blueskysocial
+    - torch==2.2.2
