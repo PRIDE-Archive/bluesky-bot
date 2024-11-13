@@ -16,8 +16,9 @@ This project is a FastAPI-based bot designed to publish dataset updates from the
 - Uvicorn
 - transformers
 - blueskysocial
+- torch
 
 You can install the necessary dependencies using:
 
 ```bash
-pip install fastapi uvicorn transformers blueskysocial
+pip install fastapi uvicorn transformers blueskysocial torch
