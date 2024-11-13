@@ -106,6 +106,10 @@ def main(config_file, config_profile):
 
     client.authenticate(BLUESKY_HANDLE, BLUESKY_PASSWORD)
 
+    logging.getLogger("uvicorn.access").addFilter(NoHealthAccessLogFilter())
+
+    import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=int(PORT))
 
 
