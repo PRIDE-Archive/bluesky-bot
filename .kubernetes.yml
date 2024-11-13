@@ -35,15 +35,15 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: $port
-#          env:
-#            - name: HTTP_PROXY
-#              value: "http://$http_proxy_host:$http_proxy_port"
-#            - name: HTTPS_PROXY
-#              value: "http://$http_proxy_host:$http_proxy_port"
-#            - name: http_proxy
-#              value: "http://$http_proxy_host:$http_proxy_port"
-#            - name: https_proxy
-#              value: "http://$http_proxy_host:$http_proxy_port"
+          env:
+            - name: HTTP_PROXY
+              value: "http://$http_proxy_host:$http_proxy_port"
+            - name: HTTPS_PROXY
+              value: "http://$http_proxy_host:$http_proxy_port"
+            - name: http_proxy
+              value: "http://$http_proxy_host:$http_proxy_port"
+            - name: https_proxy
+              value: "http://$http_proxy_host:$http_proxy_port"
           volumeMounts:
             - name: application-config
               mountPath: /app/config.ini
