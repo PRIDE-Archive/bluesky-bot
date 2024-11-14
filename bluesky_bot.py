@@ -82,6 +82,15 @@ async def post_to_bluesky(message: MessageModel):
     buffer.append(post_str)
     return {"status": "Added to buffer", "total_in_buffer": len(buffer)}
 
+@app.get("/buffer_count")
+async def get_buffer_count():
+    """
+    Get the number of posts currently in the buffer.
+    :return: Number of posts in the buffer.
+    """
+    count = len(buffer)
+    return {"pending_posts": count}
+
 def post_from_buffer():
     if buffer:
         post_content = random.choice(buffer)  # Select a random post from the buffer
