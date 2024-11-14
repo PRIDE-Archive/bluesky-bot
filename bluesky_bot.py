@@ -54,12 +54,12 @@ def build_bluesky_post(accession, tweet, url) -> str:
     alert_emoji = "🚨"
 
     # Construct the final post with emoji, accession, and URL
-    final_post = f"{alert_emoji} {accession} {alert_emoji}\n\n{tweet}\n\n {url}"
+    final_post = f"[{accession}]({url}) {alert_emoji}\n\n{tweet}\n\n{alert_emoji} New dataset alert! {alert_emoji}"
 
     return final_post
 
 def create_tweet(title, description):
-    prompt = f"Summarize this dataset for social media: Title: {title}; Description: {description}"
+    prompt = f"Summarize this dataset for social media with 200 characters: Title: {title}; Description: {description}"
 
     # Generate a summary with a character limit
     result = summarizer(prompt, max_length=60, min_length=10, do_sample=True)[0]['summary_text']
@@ -91,12 +91,24 @@ async def get_buffer_count():
     count = len(buffer)
     return {"pending_posts": count}
 
+
+def fix_post_urls(post_content, urls):
+    """
+    Fix the URLs in the post content.
+    :param post_content: The post content.
+    :param urls: The URLs to be fixed.
+    :return: The post content with fixed URLs.
+    """
+    post_content._post['text'] = post_content._post['text'].replace("[", "").replace("]", "").replace("(h","")
+    return post_content
+
+
 def post_from_buffer():
     if buffer:
         post_content = random.choice(buffer)  # Select a random post from the buffer
         buffer.remove(post_content)  # Remove the selected post from the buffer
         post = Post(post_content)
-        urls = post._parse_urls()
+        urls = post._parse_rich_urls()
         logging.info(f"Posting: {urls}")
         client.post(post)
         print(f"Posted at {datetime.now().strftime('%H:%M')} - {post_content}")
