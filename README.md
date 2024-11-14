@@ -1,24 +1,47 @@
 # Bluesky PRIDE Bot
 
-This project is a FastAPI-based bot designed to publish dataset updates from the PRIDE Archive to Bluesky. The bot uses the FLAN-T5 model to summarize dataset titles and descriptions and posts them to Bluesky with an alert emoji for easy visibility.
+A FastAPI-based bot for the Bluesky social platform that automatically posts summarized dataset information from PRIDE Archive. The bot schedules posts throughout the day and manages a buffer of datasets to ensure regular updates.
 
 ## Features
 
-- **Summarization**: The bot uses a pre-trained FLAN-T5 small model to summarize dataset titles and descriptions for social media.
-- **Bluesky Integration**: The bot posts the dataset information to Bluesky using the BlueskySocial Python client.
-- **FastAPI Endpoint**: Exposes an endpoint (`/publish`) to trigger posts to Bluesky.
-- **Customizable**: Easily configurable with your Bluesky credentials and dataset information.
+- Uses the [FLAN-T5 small model](https://huggingface.co/google/flan-t5-small) for summarizing dataset descriptions.
+- Posts to Bluesky five times a day at scheduled times.
+- Manages a daily buffer to avoid repetitive posting.
+- Configurable with environment-specific settings.
 
-## Requirements
+## Installation
 
-- Python 3.7+
-- FastAPI
-- Uvicorn
-- transformers
-- blueskysocial
-- torch
+1. **Clone the repository:**
+    ```bash
+    git clone <repository-url>
+    cd <repository-directory>
+    ```
 
-You can install the necessary dependencies using:
+2. **Install dependencies:**
+    ```bash
+    conda env create -f environment.yml
+    ```
+
+3. **Configure environment variables:**
+    Ensure the `BLUESKY_HANDLE` and `BLUESKY_PASSWORD` variables are set in the `config.ini` file or as environment variables.
+
+4. **Create a config.ini file:**
+    Example `config.ini` file:
+    ```ini
+    [DEFAULT]
+    PORT = 8000
+
+    [TEST]
+    BLUESKY_HANDLE = "your_bluesky_handle"
+    BLUESKY_PASSWORD = "your_bluesky_password"
+    PORT = 8000
+    ```
+
+## Usage
+
+### Run the Bot
+
+Start the bot using the following command:
 
 ```bash
-pip install fastapi uvicorn transformers blueskysocial torch
+python main.py --config-file config.ini --config-profile TEST

@@ -13,3 +13,4 @@ dependencies:
   - pip:
     - blueskysocial
     - torch==2.2.2
+    - APScheduler

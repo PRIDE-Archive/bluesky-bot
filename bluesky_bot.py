@@ -6,6 +6,10 @@ from blueskysocial import Client, Post
 from fastapi import FastAPI
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
+from datetime import datetime
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+import random
 
 app = FastAPI(
     title="bluesky pride bot",
@@ -27,6 +31,7 @@ BLUESKY_HANDLE = None  # os.getenv("BLUESKY_HANDLE")  # Your Bluesky handle (e.g
 BLUESKY_PASSWORD = None  # os.getenv("BLUESKY_PASSWORD")  # Your Bluesky password
 
 client = Client()
+buffer = []
 
 # Load FLAN-T5 small model and tokenizer
 tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-small")
@@ -72,8 +77,41 @@ class MessageModel(BaseModel):
 async def post_to_bluesky(message: MessageModel):
     tweet = create_tweet(message.title, message.description)
     post_str = build_bluesky_post(message.accession, tweet, message.url)
-    post = Post(post_str)
-    client.post(post)
+    # post = Post(post_str)
+    # client.post(post)
+    buffer.append(post_str)
+    return {"status": "Added to buffer", "total_in_buffer": len(buffer)}
+
+def post_from_buffer():
+    if buffer:
+        post_content = random.choice(buffer)  # Select a random post from the buffer
+        buffer.remove(post_content)  # Remove the selected post from the buffer
+        post = Post(post_content)
+        client.post(post)
+        print(f"Posted at {datetime.now().strftime('%H:%M')} - {post_content}")
+    else:
+        print(f"No posts in buffer to post at {datetime.now().strftime('%H:%M')}")
+
+def clear_buffer():
+    global buffer
+    buffer = []
+    print("Buffer cleared for the new day.")
+
+# Initialize the scheduler
+scheduler = BackgroundScheduler()
+
+# Schedule posting times
+scheduler.add_job(post_from_buffer, CronTrigger(hour=7, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=11, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=14, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=18, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=22, minute=0))
+
+# Schedule buffer clearing at midnight
+scheduler.add_job(clear_buffer, CronTrigger(hour=0, minute=0))
+
+# Start the scheduler
+scheduler.start()
 
 
 class NoHealthAccessLogFilter(logging.Filter):
