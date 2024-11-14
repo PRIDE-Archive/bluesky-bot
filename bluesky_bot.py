@@ -96,10 +96,17 @@ def post_from_buffer():
         post_content = random.choice(buffer)  # Select a random post from the buffer
         buffer.remove(post_content)  # Remove the selected post from the buffer
         post = Post(post_content)
+        urls = post._parse_urls()
+        logging.info(f"Posting: {urls}")
         client.post(post)
         print(f"Posted at {datetime.now().strftime('%H:%M')} - {post_content}")
     else:
         print(f"No posts in buffer to post at {datetime.now().strftime('%H:%M')}")
+
+@app.get("/post_now")
+async def post_now():
+    post_from_buffer()
+    return {"status": "Posted"}
 
 def clear_buffer():
     global buffer
@@ -111,8 +118,10 @@ scheduler = BackgroundScheduler()
 
 # Schedule posting times
 scheduler.add_job(post_from_buffer, CronTrigger(hour=7, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=9, minute=0))
 scheduler.add_job(post_from_buffer, CronTrigger(hour=11, minute=0))
 scheduler.add_job(post_from_buffer, CronTrigger(hour=14, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=16, minute=0))
 scheduler.add_job(post_from_buffer, CronTrigger(hour=18, minute=0))
 scheduler.add_job(post_from_buffer, CronTrigger(hour=22, minute=0))
 
