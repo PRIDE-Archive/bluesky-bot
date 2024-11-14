@@ -10,6 +10,7 @@ from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 import random
+import httpx
 
 app = FastAPI(
     title="bluesky pride bot",
@@ -119,6 +120,50 @@ def post_from_buffer():
 async def post_now():
     post_from_buffer()
     return {"status": "Posted"}
+
+
+async def bluesky_login():
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://bsky.social/xrpc/com.atproto.server.createSession",
+            json={"identifier": BLUESKY_HANDLE, "password": BLUESKY_PASSWORD}
+        )
+        response.raise_for_status()
+        return response.json()["accessJwt"]
+@app.get("/get_posts")
+async def get_posts(limit: int = 5):
+    try:
+        # Login and get JWT token
+        jwt_token = await bluesky_login()
+
+        # Fetch user posts
+        async with httpx.AsyncClient() as client:
+            headers = {"Authorization": f"Bearer {jwt_token}"}
+            response = await client.get(
+                "https://bsky.social/xrpc/com.atproto.repo.listRecords",
+                headers=headers,
+                params={
+                    "repo": BLUESKY_HANDLE,
+                    "collection": "app.bsky.feed.post",
+                    "limit": limit,
+                }
+            )
+            response.raise_for_status()
+            data = response.json()
+
+        # Extract posts
+        posts = [
+            {
+                "id": record["uri"].split('/')[-1],
+                "content": record["value"]["text"],
+                "createdAt": record["value"]["createdAt"],
+            }
+            for record in data.get("records", [])
+        ]
+
+        return posts
+    except Exception as e:
+        return {"error": str(e)}
 
 def clear_buffer():
     global buffer
