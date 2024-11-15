@@ -13,3 +13,4 @@ dependencies:
   - pip:
     - torch==2.2.2
     - APScheduler
+    - aiolimiter
