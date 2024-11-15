@@ -5,7 +5,7 @@ import random
 import asyncio
 import re
 from datetime import datetime
-from typing import List, Dict, Tuple, Union
+from typing import List, Dict
 
 import click
 import requests
