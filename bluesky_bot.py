@@ -111,10 +111,15 @@ async def post_now():
 
 
 @app.get("/get_posts")
-async def get_posts(limit: int = 5):
+async def get_posts():
     """Fetch recent posts from Bluesky."""
+    return EXISTING_POSTS_BUFFER
+
+async def update_posts(limit: int = 5, jwt_token: str = None):
+    """Update the existing posts buffer."""
     try:
-        jwt_token = await bluesky_login()
+        if not jwt_token:
+            jwt_token = await bluesky_login()
         async with httpx.AsyncClient() as client:
             headers = {"Authorization": f"Bearer {jwt_token}"}
             response = await client.get(
@@ -251,6 +256,9 @@ async def post_from_buffer():
 
         BUFFER.remove(post_content)
         logging.info(f"Successfully posted: {post_content}")
+
+        # Use the existing connection to update the posts buffer
+        await update_posts(limit=5, jwt_token=jwt_token)
         return {"status": "Posted successfully", "post": post_content}
 
     except Exception as e:
@@ -260,7 +268,11 @@ async def post_from_buffer():
 # Scheduler setup
 scheduler = AsyncIOScheduler()
 scheduler.add_job(post_from_buffer, CronTrigger(hour=7, minute=0))
-scheduler.add_job(get_posts, CronTrigger(hour=0, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=11, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=15, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=19, minute=0))
+scheduler.add_job(post_from_buffer, CronTrigger(hour=23, minute=0))
+scheduler.add_job(update_posts, CronTrigger(hour=0, minute=0))
 scheduler.start()
 
 
