@@ -1,6 +1,5 @@
 import configparser
 import logging
-import os
 import random
 import asyncio
 import re
@@ -8,11 +7,10 @@ from datetime import datetime
 from typing import List, Dict
 
 import click
-import requests
+from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import FastAPI
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, pipeline
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 import httpx
 from aiolimiter import AsyncLimiter
@@ -265,14 +263,21 @@ async def post_from_buffer():
         logging.error(f"Failed to post to Bluesky: {e}")
         return {"status": "Failed to post", "error": str(e)}
 
+
+def post_from_buffer_job():
+    asyncio.run(post_from_buffer())
+
+def update_posts_job():
+    asyncio.run(update_posts())
+
 # Scheduler setup
-scheduler = AsyncIOScheduler()
-scheduler.add_job(post_from_buffer, CronTrigger(hour=7, minute=0))
-scheduler.add_job(post_from_buffer, CronTrigger(hour=11, minute=0))
-scheduler.add_job(post_from_buffer, CronTrigger(hour=15, minute=0))
-scheduler.add_job(post_from_buffer, CronTrigger(hour=19, minute=0))
-scheduler.add_job(post_from_buffer, CronTrigger(hour=23, minute=0))
-scheduler.add_job(update_posts, CronTrigger(hour=0, minute=0))
+scheduler = BackgroundScheduler()
+scheduler.add_job(post_from_buffer_job, CronTrigger(hour=7, minute=0))
+scheduler.add_job(post_from_buffer_job, CronTrigger(hour=11, minute=0))
+scheduler.add_job(post_from_buffer_job, CronTrigger(hour=15, minute=0))
+scheduler.add_job(post_from_buffer_job, CronTrigger(hour=19, minute=0))
+scheduler.add_job(post_from_buffer_job, CronTrigger(hour=23, minute=0))
+scheduler.add_job(update_posts_job, CronTrigger(hour=0, minute=0))
 scheduler.start()
 
 
