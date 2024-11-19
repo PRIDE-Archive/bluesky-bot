@@ -111,6 +111,8 @@ async def post_now():
 @app.get("/get_posts")
 async def get_posts():
     """Fetch recent posts from Bluesky."""
+    if not EXISTING_POSTS_BUFFER:
+        await update_posts()
     return EXISTING_POSTS_BUFFER
 
 async def update_posts(limit: int = 5, jwt_token: str = None):
